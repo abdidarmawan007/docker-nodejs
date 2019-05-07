@@ -18,11 +18,8 @@ spec:
         env: staging
     spec:
       containers:
-      - name: node-web-1
-        #image: smebberson/alpine-nginx
+      - name: $GKE_DEPLOYMENT_NAME
         image: "gcr.io/google-samples/hello-app:2.0"
-        #image: richarvey/nginx-php-fpm
-        #image: tutum/apache-php
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
