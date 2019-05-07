@@ -14,7 +14,7 @@ spec:
   template:
     metadata:
       labels:
-        app: node-web-1
+        app: $GKE_DEPLOYMENT_NAME
         env: staging
     spec:
       containers:
