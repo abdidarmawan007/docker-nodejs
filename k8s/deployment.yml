@@ -29,7 +29,7 @@ spec:
         resources:
             requests:
                cpu: "$GKE_POD_CPU"
-               memory: "50Mi"
+               memory: "$GKE_POD_MEMORY"
             limits:
                cpu: "100m"
                memory: "100Mi"
