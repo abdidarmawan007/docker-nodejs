@@ -28,7 +28,7 @@ spec:
         - containerPort: 8080
         resources:
             requests:
-               cpu: "80m"
+               cpu: "$GKE_POD_CPU"
                memory: "50Mi"
             limits:
                cpu: "100m"
