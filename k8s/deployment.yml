@@ -1,7 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: node-web-1
+  name: $GKE_DEPLOYMENT_NAME
 spec:
   replicas: 1
   revisionHistoryLimit: 5
