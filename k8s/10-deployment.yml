@@ -1,47 +1,82 @@
-apiVersion: extensions/v1beta1
-kind: Deployment
+### Config Deployment Admin Dashboard ( use replicaset for blue/green deployment spinnaker)###
+apiVersion: v1
+kind: Service
 metadata:
   name: $GKE_DEPLOYMENT_NAME
+  labels:
+    app: $GKE_DEPLOYMENT_NAME
 spec:
-  replicas: 1
-  revisionHistoryLimit: 5
-  minReadySeconds: 20
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
+  selector:
+    app: $GKE_DEPLOYMENT_NAME
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+type: LoadBalancer
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  #name: stag-cms # NOTE: Set it with teamcity variable
+  annotations:
+    strategy.spinnaker.io/max-version-history: '2'
+    traffic.spinnaker.io/load-balancers: '["service $GKE_DEPLOYMENT_NAME"]'
+  labels:
+    tier: $GKE_DEPLOYMENT_NAME # NOTE: (tier for spinnaker) Set it with teamcity variable
+  name: $GKE_DEPLOYMENT_NAME # NOTE: Set it with teamcity variable
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      tier: $GKE_DEPLOYMENT_NAME # NOTE: (tier for spinnaker) Set it with teamcity variable
   template:
     metadata:
       labels:
-        app: $GKE_DEPLOYMENT_NAME
-        env: staging
+        tier: $GKE_DEPLOYMENT_NAME # NOTE: (tier for spinnaker) Set it with teamcity variable
+        #env: staging # NOTE: Set it with teamcity variable
     spec:
       containers:
-      - name: $GKE_DEPLOYMENT_NAME
+      - name: $GKE_DEPLOYMENT_NAME # NOTE: Set it with teamcity variable
+        #image: $GKE_REGISTRY_REGION/$GKE_PROJECT_ID/$GKE_REGISTRY_NAME:$GKE_CONTAINER_TAG  ## NOTE: variable envsubst for teamcity in url registry adn tag
+        #image: 'asia.gcr.io/collection-rc-staging-00/cms-staging:CMS-667-1-889'
         image: "gcr.io/google-samples/hello-app:2.0"
         imagePullPolicy: Always
         ports:
-        - containerPort: 8080
+        - containerPort: 80
         resources:
-            requests:
+            limits:
                cpu: "$GKE_POD_CPU"
                memory: "$GKE_POD_MEMORY"
-            limits:
-               cpu: "100m"
-               memory: "100Mi"
         # health checks self healing check port 80 response 200,
         # if containers error (400-500) kubernetes restart the pod
-#        readinessProbe:
-#          httpGet:
-#            path: /
-#            port: 80
-#          initialDelaySeconds: 25
-#          timeoutSeconds: 10
-#          periodSeconds: 5
-#        livenessProbe:
-#           httpGet:
-#             path: /
-#             port: 80
-#           initialDelaySeconds: 25
-#           periodSeconds: 5
+        # NOTE: this config health check will use by ingress
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 15
+          timeoutSeconds: 6
+          periodSeconds: 10
+        livenessProbe:
+           httpGet:
+             path: /
+             port: 80
+           initialDelaySeconds: 15
+           timeoutSeconds: 6
+           periodSeconds: 10
+---
+### Config Autoscale ###
+# NOTE: Config Autoscale pods deployment
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name:  $GKE_DEPLOYMENT_NAME # NOTE: Set it with teamcity variable
+#  namespace: default
+spec:
+  maxReplicas: 25
+  minReplicas: 2
+  scaleTargetRef:
+    apiVersion: extensions/v1
+    kind: ReplicaSet
+    name:  $GKE_DEPLOYMENT_NAME # NOTE: Set it with teamcity variable
+  targetCPUUtilizationPercentage: 70
