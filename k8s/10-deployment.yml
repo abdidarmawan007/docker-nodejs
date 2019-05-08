@@ -25,7 +25,7 @@ metadata:
     tier: $GKE_DEPLOYMENT_NAME
   name: $GKE_DEPLOYMENT_NAME
 spec:
-  replicas: 2
+  replicas: $GKE_POD_MINIMUM_REPLICAS
   selector:
     matchLabels:
       tier: $GKE_DEPLOYMENT_NAME
@@ -74,7 +74,7 @@ metadata:
 #  namespace: default
 spec:
   maxReplicas: 25
-  minReplicas: 2
+  minReplicas: $GKE_POD_MINIMUM_REPLICAS
   scaleTargetRef:
     apiVersion: extensions/v1
     kind: ReplicaSet
